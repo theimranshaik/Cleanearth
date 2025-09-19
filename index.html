@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>CleanEarth Game</title>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&family=Fredoka+One&display=swap" rel="stylesheet">
+
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+  }
+  body {
+    background: #f0f9f0;
+    font-family: 'Comic Neue', sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: #6c63ff;
+    color: white;
+    font-size: 1.4rem;
+  }
+  #logo {
+    font-weight: bold;
+    font-family: 'Fredoka One', sans-serif;
+  }
+  #score {
+    font-size: 1.4rem;
+  }
+  #game {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 7rem; /* room for bottom buttons */
+  }
+  #emoji {
+    font-size: 3rem;
+    height: 3rem;
+    margin-bottom: 0.3rem;
+  }
+  #item {
+    font-family: 'Fredoka One', sans-serif;
+    font-size: 2rem;
+    text-align: center;
+    padding: 0.5rem;
+    word-wrap: break-word;
+    max-width: 90%;
+    transition: color 0.3s ease;
+    opacity: 0;
+  }
+  #item.fade-in {
+    animation: fadeIn 0.5s forwards;
+  }
+  @keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+  }
+  #feedback {
+    text-align: center;
+    font-size: 1.1rem;
+    padding: 0.5rem;
+    min-height: 3rem;
+    max-width: 90%;
+  }
+  .buttons {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-around;
+    padding: 0.5rem;
+    background: #ffffff;
+    z-index: 10;
+  }
+  button {
+    flex: 1;
+    margin: 0 0.3rem;
+    padding: 0.6rem;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 12px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .recycle {background: #4caf50;}
+  .compost {background: #ff9800;}
+  .trash {background: #9e9e9e;}
+  button span {
+    font-size: 2rem;
+    line-height: 2rem;
+  }
+
+  /* Popup overlay */
+  #popup {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  #popupContent {
+    background: #ffffff;
+    padding: 1rem;
+    border-radius: 12px;
+    max-width: 90%;
+    text-align: center;
+    font-size: 1.1rem;
+  }
+  #popupContent button {
+    display: block;
+    margin: 0.8rem auto 0;
+    background: #6c63ff;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 1rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div id="logo">CleanEarth</div>
+  <div>Score: <span id="score">0</span></div>
+</header>
+
+<!-- Game area -->
+<div id="game">
+  <div id="emoji"></div>
+  <div id="item">Loading...</div>
+  <div id="feedback"></div>
+</div>
+
+<!-- Buttons -->
+<div class="buttons">
+  <button class="recycle" onclick="checkAnswer('recycle')">
+    <span>♻️</span>
+    Recycle
+  </button>
+  <button class="compost" onclick="checkAnswer('compost')">
+    <span>🌱</span>
+    Compost
+  </button>
+  <button class="trash" onclick="checkAnswer('trash')">
+    <span>🗑️</span>
+    Trash
+  </button>
+</div>
+
+<!-- Popup -->
+<div id="popup">
+  <div id="popupContent">
+    <h2>How to Play</h2>
+    <p>👉 See the item on the screen.</p>
+    <p>🕹 Tap the right button where it should go.</p>
+    <p>🌟 Get points and learn cool facts!</p>
+    <button onclick="startGame()">Got it!</button>
+  </div>
+</div>
+
+<!-- Sounds -->
+<audio id="correctSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+<audio id="wrongSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+
+<!-- Calm background music -->
+<audio id="bgMusic" src="https://cdn.pixabay.com/audio/2023/06/04/audio_1e3e826005.mp3" loop></audio>
+
+<script>
+const items = [
+  {icon:'🍼', name: 'Plastic bottle', correct: 'recycle', fact: 'Plastic bottles can be turned into new bottles. Putting them in recycle saves energy.'},
+  {icon:'🍌', name: 'Banana peel', correct: 'compost', fact: 'Banana peels go in compost. They make healthy soil.'},
+  {icon:'🥤', name: 'Styrofoam cup', correct: 'trash', fact: 'Styrofoam cannot be recycled easily. It goes to trash.'},
+  {icon:'📰', name: 'Newspaper', correct: 'recycle', fact: 'Old newspapers can be recycled into new paper.'},
+  {icon:'🍎', name: 'Apple core', correct: 'compost', fact: 'Apple cores break down into soil in compost.'},
+  {icon:'🛍️', name: 'Plastic bag', correct: 'trash', fact: 'Plastic bags often go to trash. Better to use cloth bags.'},
+  {icon:'🍾', name: 'Glass bottle', correct: 'recycle', fact: 'Glass bottles can be melted and made new many times.'},
+  {icon:'🍵', name: 'Tea leaves', correct: 'compost', fact: 'Tea leaves are food waste. Compost them to feed the soil.'},
+  {icon:'🔋', name: 'Battery', correct: 'trash', fact: 'Batteries should be dropped at special collection points. Do not recycle in home bin.'},
+  {icon:'📦', name: 'Cardboard box', correct: 'recycle', fact: 'Cardboard can be recycled into new boxes.'}
+];
+
+let currentIndex = 0;
+let score = 0;
+let shuffledItems = [];
+let inputLocked = false;
+
+function shuffle(array) {
+  return array
+    .map(value => ({ value, sort: Math.random() }))
+    .sort((a, b) => a.sort - b.sort)
+    .map(({ value }) => value);
+}
+
+function startGame() {
+  document.getElementById('popup').style.display = 'none';
+  shuffledItems = shuffle(items);
+  currentIndex = 0;
+  score = 0;
+  document.getElementById('score').textContent = score;
+  showItem();
+  document.getElementById('bgMusic').play().catch(()=>{});
+}
+
+function showItem() {
+  inputLocked = false; // allow touches again
+  const item = shuffledItems[currentIndex];
+  document.getElementById('emoji').textContent = '';
+  const itemDiv = document.getElementById('item');
+  itemDiv.classList.remove('fade-in');
+  // delay to restart animation
+  void itemDiv.offsetWidth;
+  itemDiv.textContent = item.icon + ' ' + item.name; // emoji + name
+  itemDiv.style.color = '#333';
+  itemDiv.classList.add('fade-in');
+  document.getElementById('feedback').textContent = '';
+}
+
+function checkAnswer(choice) {
+  if (inputLocked) return; // ignore extra touches
+  inputLocked = true;
+
+  const item = shuffledItems[currentIndex];
+  const correctSound = document.getElementById('correctSound');
+  const wrongSound = document.getElementById('wrongSound');
+  const itemDiv = document.getElementById('item');
+  const emojiDiv = document.getElementById('emoji');
+
+  if (choice === item.correct) {
+    score++;
+    itemDiv.style.color = '#2e7d32'; // green
+    emojiDiv.textContent = '✅';
+    document.getElementById('feedback').textContent = 'Good! ' + item.fact;
+    correctSound.play();
+  } else {
+    itemDiv.style.color = '#c62828'; // red
+    emojiDiv.textContent = '❌';
+    document.getElementById('feedback').textContent = 'Oops! ' + item.fact;
+    wrongSound.play();
+  }
+  document.getElementById('score').textContent = score;
+  currentIndex = (currentIndex + 1) % shuffledItems.length;
+  setTimeout(showItem, 4000); // slower fact display
+}
+</script>
+</body>
+</html>
