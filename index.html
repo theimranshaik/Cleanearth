@@ -109,7 +109,7 @@
   }
 
   /* Popup overlay */
-  #popup {
+  #popup, #badgePopup {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0,0,0,0.6);
@@ -118,7 +118,7 @@
     justify-content: center;
     z-index: 100;
   }
-  #popupContent {
+  #popupContent, #badgeContent {
     background: #ffffff;
     padding: 1rem;
     border-radius: 12px;
@@ -126,7 +126,7 @@
     text-align: center;
     font-size: 1.1rem;
   }
-  #popupContent button {
+  #popupContent button, #badgeContent button {
     display: block;
     margin: 0.8rem auto 0;
     background: #6c63ff;
@@ -168,7 +168,7 @@
   </button>
 </div>
 
-<!-- Popup -->
+<!-- Popup How to Play -->
 <div id="popup">
   <div id="popupContent">
     <h2>How to Play</h2>
@@ -179,25 +179,62 @@
   </div>
 </div>
 
+<!-- Badge Popup -->
+<div id="badgePopup" style="display:none;">
+  <div id="badgeContent">
+    <h2 id="badgeTitle"></h2>
+    <p id="badgeText"></p>
+    <button onclick="closeBadge()">Thank you</button>
+  </div>
+</div>
+
 <!-- Sounds -->
 <audio id="correctSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
 <audio id="wrongSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
-
 <!-- Calm background music -->
 <audio id="bgMusic" src="https://cdn.pixabay.com/audio/2023/06/04/audio_1e3e826005.mp3" loop></audio>
 
 <script>
+// leave items empty, you fill later
 const items = [
   {icon:'🍼', name: 'Plastic bottle', correct: 'recycle', fact: 'Plastic bottles can be turned into new bottles. Putting them in recycle saves energy.'},
   {icon:'🍌', name: 'Banana peel', correct: 'compost', fact: 'Banana peels go in compost. They make healthy soil.'},
   {icon:'🥤', name: 'Styrofoam cup', correct: 'trash', fact: 'Styrofoam cannot be recycled easily. It goes to trash.'},
   {icon:'📰', name: 'Newspaper', correct: 'recycle', fact: 'Old newspapers can be recycled into new paper.'},
   {icon:'🍎', name: 'Apple core', correct: 'compost', fact: 'Apple cores break down into soil in compost.'},
+  {icon:'', name: 'Coconut shell', correct: 'compost', fact: 'Coconut shells can break down in compost pits over time.'},
+  {icon:'', name: 'Masala packet', correct: 'trash', fact: 'Plastic masala packets cannot be recycled easily and go to trash.'},
+  {icon:'', name: 'Used tea bag', correct: 'compost', fact: 'Used tea bags can go into compost and enrich the soil.'},
+  {icon:'', name: 'Coconut husk', correct: 'compost', fact: 'Coconut husks are biodegradable and can be composted.'},
+  {icon:'', name: 'Plastic pickle jar', correct: 'recycle', fact: 'Clean plastic pickle jars can be recycled into new plastic items.'},
+  {icon:'', name: 'Used matchsticks', correct: 'trash', fact: 'Used matchsticks usually go to trash as they are burned and cannot be recycled.'},
+  {icon:'', name: 'Banana leaves', correct: 'compost', fact: 'Banana leaves are biodegradable and can be added to compost.'},
+  {icon:'', name: 'Old sari pieces', correct: 'recycle', fact: 'Old cloth like sari pieces can be recycled or repurposed into rags.'},
+  {icon:'', name: 'Cardboard milk pack', correct: 'recycle', fact: 'Cardboard milk packs can be recycled into new paper products.'},
+  {icon:'', name: 'Vegetable peels', correct: 'compost', fact: 'Vegetable peels decompose quickly and are perfect for compost.'},
+  {icon:'', name: 'Plastic spoon', correct: 'trash', fact: 'Disposable plastic spoons are non-biodegradable and should go to trash.'},
+  {icon:'', name: 'Steel tiffin box', correct: 'recycle', fact: 'Steel tiffin boxes can be recycled into new steel items.'},
+  {icon:'', name: 'Areca plate', correct: 'compost', fact: 'Areca leaf plates are biodegradable and can go into compost.'},
+  {icon:'', name: 'Plastic chai cup', correct: 'trash', fact: 'Plastic tea cups often end up as trash; better to use reusable cups.'},
+  {icon:'', name: 'Paper plate', correct: 'recycle', fact: 'Paper plates can be recycled if clean and dry.'},
+  {icon:'', name: 'Rice leftovers', correct: 'compost', fact: 'Leftover cooked rice decomposes well in compost bins.'},
+  {icon:'', name: 'Old school notebook', correct: 'recycle', fact: 'Old notebooks can be recycled to make new paper.'},
+  {icon:'', name: 'Incense stick ash', correct: 'compost', fact: 'Ash from incense sticks can be mixed into soil or compost.'},
+  {icon:'', name: 'Broken clay pot', correct: 'trash', fact: 'Broken clay pots cannot be easily recycled and usually go to trash.'},
+  {icon:'', name: 'Jute bag', correct: 'recycle', fact: 'Jute bags are natural fiber and can be recycled or reused many times.'},
   {icon:'🛍️', name: 'Plastic bag', correct: 'trash', fact: 'Plastic bags often go to trash. Better to use cloth bags.'},
   {icon:'🍾', name: 'Glass bottle', correct: 'recycle', fact: 'Glass bottles can be melted and made new many times.'},
   {icon:'🍵', name: 'Tea leaves', correct: 'compost', fact: 'Tea leaves are food waste. Compost them to feed the soil.'},
   {icon:'🔋', name: 'Battery', correct: 'trash', fact: 'Batteries should be dropped at special collection points. Do not recycle in home bin.'},
   {icon:'📦', name: 'Cardboard box', correct: 'recycle', fact: 'Cardboard can be recycled into new boxes.'}
+];
+
+const badges = [
+  {score:5, title:"Eco Warrior", text:"Great job! You are an Eco Warrior."},
+  {score:10, title:"Eco Hero", text:"Amazing! You are an Eco Hero."},
+  {score:15, title:"Eco Leader", text:"Awesome! You are an Eco Leader."},
+  {score:20, title:"Earth Guardian", text:"Fantastic! You are an Earth Guardian."},
+  {score:25, title:"Planet Protector", text:"Incredible! You are a Planet Protector."}
 ];
 
 let currentIndex = 0;
@@ -223,21 +260,24 @@ function startGame() {
 }
 
 function showItem() {
-  inputLocked = false; // allow touches again
+  if (shuffledItems.length === 0) {
+    document.getElementById('item').textContent = 'No items loaded!';
+    return;
+  }
+  inputLocked = false;
   const item = shuffledItems[currentIndex];
   document.getElementById('emoji').textContent = '';
   const itemDiv = document.getElementById('item');
   itemDiv.classList.remove('fade-in');
-  // delay to restart animation
-  void itemDiv.offsetWidth;
-  itemDiv.textContent = item.icon + ' ' + item.name; // emoji + name
+  void itemDiv.offsetWidth; // restart animation
+  itemDiv.textContent = (item.icon || '') + ' ' + item.name;
   itemDiv.style.color = '#333';
   itemDiv.classList.add('fade-in');
   document.getElementById('feedback').textContent = '';
 }
 
 function checkAnswer(choice) {
-  if (inputLocked) return; // ignore extra touches
+  if (inputLocked) return;
   inputLocked = true;
 
   const item = shuffledItems[currentIndex];
@@ -248,19 +288,36 @@ function checkAnswer(choice) {
 
   if (choice === item.correct) {
     score++;
-    itemDiv.style.color = '#2e7d32'; // green
+    itemDiv.style.color = '#2e7d32';
     emojiDiv.textContent = '✅';
     document.getElementById('feedback').textContent = 'Good! ' + item.fact;
     correctSound.play();
   } else {
-    itemDiv.style.color = '#c62828'; // red
+    itemDiv.style.color = '#c62828';
     emojiDiv.textContent = '❌';
     document.getElementById('feedback').textContent = 'Oops! ' + item.fact;
     wrongSound.play();
   }
   document.getElementById('score').textContent = score;
+
+  // check badge
+  showBadgeIfAny(score);
+
   currentIndex = (currentIndex + 1) % shuffledItems.length;
-  setTimeout(showItem, 4000); // slower fact display
+  setTimeout(showItem, 4000);
+}
+
+function showBadgeIfAny(sc) {
+  const badge = badges.find(b => b.score === sc);
+  if (badge) {
+    document.getElementById('badgeTitle').textContent = badge.title;
+    document.getElementById('badgeText').textContent = badge.text;
+    document.getElementById('badgePopup').style.display = 'flex';
+  }
+}
+
+function closeBadge() {
+  document.getElementById('badgePopup').style.display = 'none';
 }
 </script>
 </body>
